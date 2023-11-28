@@ -1,14 +1,20 @@
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * Your implementation of various different graph algorithms.
  *
- * @author YOUR NAME HERE
+ * @author Quang Nguyen
  * @version 1.0
- * @userid YOUR USER ID HERE (i.e. gburdell3)
- * @GTID YOUR GT ID HERE (i.e. 900000000)
+ * @userid qnguyen305
+ * @GTID 903770019
  *
  * Collaborators: LIST ALL COLLABORATORS YOU WORKED WITH HERE
  *
@@ -42,7 +48,40 @@ public class GraphAlgorithms {
      *                                  doesn't exist in the graph
      */
     public static <T> List<Vertex<T>> bfs(Vertex<T> start, Graph<T> graph) {
+        if (start == null) {
+            throw new IllegalArgumentException("start is null");
+        }
+        if (graph == null) {
+            throw new IllegalArgumentException("graph is null");
+        }
 
+        Map<Vertex<T>, List<VertexDistance<T>>> adjList = graph.getAdjList();
+
+        if (!adjList.containsKey(start)) {
+            throw new IllegalArgumentException("start doesn't exist in the graph");
+        }
+
+        List<VertexDistance<T>> neighbors = adjList.get(start);
+
+        HashSet<Vertex<T>> vs = new HashSet<>();
+        Queue<Vertex<T>> queue = new LinkedList<>();
+        ArrayList<Vertex<T>> ls = new ArrayList<>();
+
+        queue.add(start);
+        vs.add(start);
+
+        while (!queue.isEmpty() && ls.size() < graph.getVertices().size()) {
+            Vertex<T> v = queue.remove();
+            ls.add(v);
+            neighbors = adjList.get(v);
+            for (VertexDistance<T> w : neighbors) {
+                if (!vs.contains(w.getVertex())) {
+                    queue.add(w.getVertex());
+                    vs.add(w.getVertex());
+                }
+            }
+        }
+        return ls;
     }
 
     /**
@@ -74,7 +113,42 @@ public class GraphAlgorithms {
      *                                  doesn't exist in the graph
      */
     public static <T> List<Vertex<T>> dfs(Vertex<T> start, Graph<T> graph) {
+        if (start == null) {
+            throw new IllegalArgumentException("start is null");
+        }
+        if (graph == null) {
+            throw new IllegalArgumentException("graph is null");
+        }
+        Map<Vertex<T>, List<VertexDistance<T>>> adjList = graph.getAdjList();
 
+        if (!adjList.containsKey(start)) {
+            throw new IllegalArgumentException("start doesn't exist in the graph");
+        }
+
+        Set<Vertex<T>> vs = new HashSet<>();
+        ArrayList<Vertex<T>> ls = new ArrayList<>();
+
+        dfsRecursive(start, vs, ls, adjList);
+        return ls;
+    }
+
+    /**
+     *
+     * @param start start
+     * @param vs visited set
+     * @param ls list
+     * @param adjList adj list
+     * @param <T> type
+     */
+    private static <T> void dfsRecursive(Vertex<T> start, Set<Vertex<T>> vs, ArrayList<Vertex<T>> ls,
+                                                    Map<Vertex<T>, List<VertexDistance<T>>> adjList) {
+        vs.add(start);
+        ls.add(start);
+        for (VertexDistance<T> v : adjList.get(start)) {
+            if (!vs.contains(v.getVertex())) {
+                dfsRecursive(v.getVertex(), vs, ls, adjList);
+            }
+        }
     }
 
     /**
@@ -111,7 +185,46 @@ public class GraphAlgorithms {
      */
     public static <T> Map<Vertex<T>, Integer> dijkstras(Vertex<T> start,
                                                         Graph<T> graph) {
+        if (start == null) {
+            throw new IllegalArgumentException("start is null");
+        }
+        if (graph == null) {
+            throw new IllegalArgumentException("graph is null");
+        }
+        Map<Vertex<T>, List<VertexDistance<T>>> adjList = graph.getAdjList();
 
+        if (!adjList.containsKey(start)) {
+            throw new IllegalArgumentException("start doesn't exist in the graph");
+        }
+
+        List<VertexDistance<T>> neighbors = adjList.get(start);
+
+        HashSet<Vertex<T>> vs = new HashSet<>();
+        PriorityQueue<VertexDistance<T>> queue = new PriorityQueue<>();
+        HashMap<Vertex<T>, Integer> dm = new HashMap<>();
+
+        for (Vertex<T> v : graph.getVertices()) {
+            dm.put(v, Integer.MAX_VALUE);
+        }
+
+        queue.add(new VertexDistance<>(start, 0));
+        dm.put(start, 0);
+
+        while (!queue.isEmpty() && vs.size() < graph.getVertices().size()) {
+            VertexDistance<T>  u = queue.remove();
+            if (!vs.contains(u.getVertex())) {
+                vs.add(u.getVertex());
+                neighbors = adjList.get(u.getVertex());
+                for (VertexDistance<T> w : neighbors) {
+                    if (!vs.contains(w.getVertex())) {
+                        dm.put(w.getVertex(), Math.min(dm.get(w.getVertex()), u.getDistance() + w.getDistance()));
+                        queue.add(new VertexDistance<>(w.getVertex(), u.getDistance() + w.getDistance()));
+                    }
+                }
+            }
+        }
+
+        return dm;
     }
 
     /**
@@ -156,6 +269,29 @@ public class GraphAlgorithms {
      * @throws IllegalArgumentException if any input is null
      */
     public static <T> Set<Edge<T>> kruskals(Graph<T> graph) {
+        if (graph == null) {
+            throw new IllegalArgumentException("graph is null");
+        }
 
+        DisjointSet<T> ds = new DisjointSet<>();
+        Set<Edge<T>> s = new HashSet<>();
+        PriorityQueue<Edge<T>> queue = new PriorityQueue<>(graph.getEdges());
+
+
+        while (!queue.isEmpty() && s.size() / 2 < graph.getVertices().size() - 1) {
+            Edge<T> e = queue.remove();
+            if (!ds.find(e.getU()).equals(ds.find(e.getV()))) {
+                s.add(e);
+                Edge<T> newEdge = new Edge<>(e.getV(), e.getU(), e.getWeight());
+                s.add(newEdge);
+                ds.union(e.getU().getData(), e.getV().getData());
+            }
+        }
+
+        if (s.size() / 2 != graph.getVertices().size() - 1) {
+            return null;
+        }
+
+        return s;
     }
 }
