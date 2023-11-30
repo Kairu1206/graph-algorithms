@@ -214,6 +214,9 @@ public class GraphAlgorithms {
             VertexDistance<T>  u = queue.remove();
             if (!vs.contains(u.getVertex())) {
                 vs.add(u.getVertex());
+                if (vs.size() >= graph.getVertices().size()) {
+                    break;
+                }
                 neighbors = adjList.get(u.getVertex());
                 for (VertexDistance<T> w : neighbors) {
                     if (!vs.contains(w.getVertex())) {
